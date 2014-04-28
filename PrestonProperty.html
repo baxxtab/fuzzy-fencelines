@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <script type="text/javascript" src="http://maps.googleapis.com/maps/api/js?key=AIzaSyCKaURziRESAowmM8vWHsvTFhYvOYE_KeY&sensor=true"></script>
+  <!--<script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.7.2/jquery.min.js"></script>-->
+  <script type="text/javascript" src="parse-1.2.18.min.js"></script>
+  <script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.11.0/jquery.min.js"></script>
+  <script type="text/javascript" src="json2.js"></script>
+<script>
+
+
+google.maps.event.addDomListener(window, 'load', initialize);
+var _owners = {
+	"nYrHi2LNKw": "Jim",
+	"9Lft5dUUVO": "Jarrod"
+};
+Parse.initialize("9qcU3bsNvBDJFVxBJs9hfvi1saNAeI1EBEt1LDyl", "izhibqnPcN2ZzBogE00BMv9UB4vsEnmt0WZnW1wz");
+
+function initialize() {
+	//  Set map to start
+	var mapProp = {
+  		center:new google.maps.LatLng(35.708,-95.973),
+  		zoom:14,
+  		mapTypeId:google.maps.MapTypeId.ROADMAP
+  	};
+	var map=new google.maps.Map(document.getElementById("googleMap"),mapProp);
+
+	//  Set property markers
+	setPropertyMarkers(map);
+	alert('fin');
+}
+
+function setPropertyMarkers(map) {
+
+	var Owner = Parse.Object.extend("Owner");
+	var WayPoint = Parse.Object.extend("WayPoint");
+	var query = new Parse.Query(WayPoint);
+
+	var owner;
+	var lastOwner;
+	var drawLines;
+
+	var lineOrder;
+
+	query.find({
+  		success: function(results) {
+
+  			results.sort(function(a, b){
+  				return (a.get("order") > b.get("order"));
+			});
+
+  			results.sort(function(a, b){
+  				return (a.get("parent").id > b.get("parent").id);
+			});
+
+			for (var i = 0; i < results.length; i++) {
+				owner = _owners[results[i].get("parent").id];
+				if (i > 0) {
+					lastOwner = _owners[results[i - 1].get("parent").id];
+					if (lastOwner == owner) {
+						drawLines = true;
+					} else {
+						drawLines = false;
+					}
+				}
+
+				var latlong = new google.maps.LatLng(
+					results[i].get("Location").latitude,
+					results[i].get("Location").longitude
+				);
+
+				var marker = new google.maps.Marker({
+					position: latlong,
+					map: map,
+					title: results[i].get("order").toString()
+				});
+
+				if (drawLines) {
+					var lineCoordinates = [
+						new google.maps.LatLng(
+							results[i -1].get("Location").latitude,
+							results[i -1].get("Location").longitude),
+						new google.maps.LatLng(
+							results[i].get("Location").latitude,
+							results[i].get("Location").longitude)
+					];
+
+					var lineSymbol = {
+						path: 'M 0,-1 0,1',
+						strokeOpacity: 1,
+						scale: 4
+  					};
+
+					var line = new google.maps.Polyline({
+						path: lineCoordinates,
+						strokeOpacity: 0,
+						icons: [{
+							icon: lineSymbol,
+							offset: '0',
+							repeat: '2px'
+    					}],
+						map: map
+					});
+					lastOwner = owner;
+				}
+	    	}
+	  	},
+  		error: function(error) {
+    		alert("Error: " + error.code + " " + error.message);
+  		}
+	});
+}
+
+
+function findOwner(id) {
+
+
+
+
+
+	return;
+
+	alert(_owners);
+	if (_owners == undefined) {
+		alert('is undefined');
+		_owners = setTimeout(fillObjects("Owner"), 10000);
+		alert(_owners + ' ownerssfsd');
+	}
+
+	alert('owner ' + _owners);
+	for (i = 0; i > _owners.length; i++) {
+		alert(id + ' ' + _owners[i]);
+		if (id == _owners[i].id) {
+			alert (_owners[i].get("Name"));
+		}
+	}
+}
+
+function fillObjects(parseClass) {
+	var Obj = Parse.Object.extend(parseClass);
+	var query = new Parse.Query(Obj);
+
+	query.find({
+		async: true,
+		cache: false,
+		success: function(results) {
+			alert(results[0].get["Name"]);
+			return results
+		},
+		error: function(error) {
+			alert("Error: " + error.message);
+		}
+	});
+}
+
+function getOwner2(ownerName, createIfNotExist) {
+	var Owner = Parse.Object.extend("Owner");
+	var query = new Parse.Query(Owner);
+	query.equalTo("Name", ownerName);
+	query.find({
+		async: false,
+		cache: false,
+		success: function(results) {
+			if (results.length > 0) {
+				alert('getOwner ' + results[0]);
+				return (results[0]);
+			} else if (createIfNotExist) {
+				var owner = new Owner();
+				owner.set("Name", ownerName);
+				owner.save();
+				return owner;
+			}
+		},
+		error: function(error) {
+			alert("Error: " + error.message);
+		}
+	});
+	return null;
+}
+
+function createWayPoints() {
+	var Owner = Parse.Object.extend("Owner");
+	var owner = new Owner();
+	owner.id = "nYrHi2LNKw";
+
+	var geoPoint1 = new Parse.GeoPoint({latitude: 35.711, longitude: -95.973});
+	var geoPoint4 = new Parse.GeoPoint({latitude: 35.708, longitude: -95.973});
+	var geoPoint5 = new Parse.GeoPoint({latitude: 35.708, longitude: -95.975});
+	var geoPoint6 = new Parse.GeoPoint({latitude: 35.708, longitude: -95.978});
+
+	var WayPoint = Parse.Object.extend("WayPoint");
+
+	var wayPoint1 = new WayPoint();
+	wayPoint1.set("Location", geoPoint1);
+	wayPoint1.set("parent", owner);
+	wayPoint1.save();
+
+	var wayPoint4 = new WayPoint();
+	wayPoint4.set("Location", geoPoint4);
+	wayPoint4.set("parent", owner);
+	wayPoint4.save();
+
+	var wayPoint5 = new WayPoint();
+	wayPoint5.set("Location", geoPoint5);
+	wayPoint5.set("parent", owner);
+	wayPoint5.save();
+
+	var wayPoint6 = new WayPoint();
+	wayPoint6.set("Location", geoPoint6);
+	wayPoint6.set("parent", owner);
+	wayPoint6.save();
+
+alert("at the end");
+
+	owner.save(null, {
+		success: function(owner) {
+			alert('success');
+		},
+		error: function(wayPoint, error) {
+			alert(error.description);
+		}
+	});
+}
+
+
+function getPropertyOwners() {
+
+
+
+return;
+
+	var PropertyOwner = Parse.Object.extend("PropertyOwner");
+	var WayPoints = Parse.Object.extend("WayPoint");
+
+	var query = new Parse.Query(PropertyOwners);
+	query.find({
+  		success: function(results) {
+    	for (var i = 0; i < results.length; i++) {
+			alert(results[i].get("Name"));
+			var objects = results[i].get("WayPoints");
+			for (var x = 0; x < objects.length; x++) {
+				alert(objects[x].get("Location"));
+			}
+    	}
+  	},
+  		error: function(error) {
+    	alert("Error: " + error.code + " " + error.message);
+  	}
+	});
+}
+
+
+</script>
+</head>
+
+<body>
+<div id="googleMap" style="width:1000px;height:1000px;"></div>
+
+
+
+</body>
+</html>
